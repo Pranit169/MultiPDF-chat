@@ -5,10 +5,13 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain.llms import HuggingFaceHub
+from langchain_community.llms import HuggingFaceEndpoint
+import os
+from htmlTemplates import css, bot_template,user_template
+
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -18,7 +21,6 @@ def get_pdf_text(pdf_docs):
             text+=page.extract_text()
     return text
     
-
 def get_text_chunks(text):
     text_splitter = CharacterTextSplitter(
         separator="\n",
@@ -37,22 +39,50 @@ def get_vectorstores(text_chunks):
     
     return vectorstores
     
-def get_conversation_chain(vectorstore):
-    llm = HuggingFaceHub(repo_id="deepset/roberta-base-squad2",model_kwars ={"temperature":0.5,"max_length":512})
+def get_conversation_chain(vectorstore,api_token):
+    os
+    repo_id = "mistralai/Mistral-7B-Instruct-v0.2"
+    llm = HuggingFaceEndpoint(
+    repo_id=repo_id, max_length=128, temperature=0.5, token=api_token
+    )
     memory = ConversationBufferMemory(memory_key = 'chat_history',return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
-        
+        llm=llm,
+        retriever = vectorstore.as_retriever(),
+        memory=memory
     )
+    return conversation_chain
     
+def handle_userinput(user_question):
+    response=st.session_state.conversation({'question': user_question})
+    st.session_state.chat_history = response['chat_history']
     
-    
-    
+    for i , message in enumerate(st.session_state.chat_history):
+        if i % 2 == 0:
+             st.write(user_template.replace("{{MSG}}",message.content),unsafe_allow_html=True)
+        else:
+            st.write(bot_template.replace("{{MSG}}",message.content),unsafe_allow_html=True)
+        
+        
 def main():
     load_dotenv()
+    api_token=os.getenv('HUGGINGFACEHUB_API_TOKEN')
     st.set_page_config(page_title="Chat with multi-PDF",page_icon=":books:")
     
+    st.write(css,unsafe_allow_html=True)
+    
+    if "conversation" not in st.session_state:
+        st.session_state.conversation = None
+    
+    if"chat_history" not in st.session_state:
+        st.session_state.chat_history = None
+    
     st.header("Chat with multiple PDFs :books:")
-    st.text_input("Ask a question")
+    user_question=st.text_input("Ask a question")
+    if user_question:
+        handle_userinput(user_question)
+    # st.write(user_template.replace("{{MSG}}","Hello Bot"),unsafe_allow_html=True)
+    # st.write(bot_template.replace("{{MSG}}","Hello human"),unsafe_allow_html=True)
     
     with st.sidebar:
         st.subheader("Your Documents")
@@ -66,7 +96,7 @@ def main():
                 
                 vectorstore = get_vectorstores(text_chunks)
                 
-                conversation = get_conversation_chain(vectorstore)
+                st.session_state.conversation = get_conversation_chain(vectorstore,api_token)
         
 
 if __name__ == '__main__':
