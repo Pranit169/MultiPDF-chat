@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="E:\Ml_project\chat_with_pdf\venv"
+VIRTUAL_ENV="E:\Ml_project\MultiPDF-chat\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
