@@ -40,7 +40,6 @@ def get_vectorstores(text_chunks):
     return vectorstores
     
 def get_conversation_chain(vectorstore,api_token):
-    os
     repo_id = "mistralai/Mistral-7B-Instruct-v0.2"
     llm = HuggingFaceEndpoint(
     repo_id=repo_id, max_length=128, temperature=0.5, token=api_token
